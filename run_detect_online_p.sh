@@ -50,11 +50,24 @@ declare -a P_ArrayVideos=(
 echo "Number of testing video is : ${#P_ArrayVideos[@]}"
 declare -i counter=0
 
+# No classififer
+#for output_video in ${P_ArrayVideos[@]}; do
+#    ((++counter))
+#    echo "Testing video ${counter} / ${#P_ArrayVideos[@]}"
+#    CUDA_VISIBLE_DEVICES=0 python detect_online_0610.py \
+#    --img 608 --conf 0.6 --iou 0.45 --half\
+#    --class 0 1 \
+#    --weights weights/20210920_5s/best.pt \
+#    --input video --source $output_video
+#done
+
+# With classifier
 for output_video in ${P_ArrayVideos[@]}; do
     ((++counter))
     echo "Testing video ${counter} / ${#P_ArrayVideos[@]}"
-    CUDA_VISIBLE_DEVICES=0 python detect_online_0610_others.py \
+    CUDA_VISIBLE_DEVICES=0 python detect_classify_online_0610.py \
     --img 608 --conf 0.6 --iou 0.45 --half\
-    --weights weights/20210909_5s/best.pt \
+    --class 0 1 \
+    --weights weights/20210920_5s/best.pt \
     --input video --source $output_video
 done

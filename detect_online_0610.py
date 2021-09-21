@@ -79,7 +79,6 @@ class Engine():
         if fps >= self.fps_target:
             self.frame_step = round(fps / self.fps_target) # if fps = 20 skips 2 frames
         print(f'input video {opt.source_url} with frame rate: {fps} => skip {self.frame_step} frame(s)')
-        print(f'offset = {total_frames} / {self.frame_step} = {total_frames / self.frame_step}')
             
         w = 1920 #int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)) # 1920
         h = 1080 #int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) # 1080
@@ -131,7 +130,7 @@ class Engine():
                             bbox_height = int(xyxy[3]) - int(xyxy[1])
                             label = f'{self.names[int(cls)]} {conf*100:.1f}%'
                             #if self.reaffirm_pets(submodel, bbox, video_name, tmp_frame, opt):
-                            if bbox_height < 160 and bbox_width < 160:
+                            if bbox_height < 198 and bbox_width < 198:
                                 FLAG_SAVE = True
                                 plot_one_box(xyxy, frame, label=label, color=self.colors[0], line_thickness=3)
                             
@@ -194,7 +193,7 @@ class Engine():
         # detect object
         preds = model(img, augment=False)[0] 
         # Apply NMS
-        preds = non_max_suppression(preds, opt.conf_thres, opt.iou_thres)
+        preds = non_max_suppression(preds, opt.conf_thres, opt.iou_thres, classes=opt.classes)
         
         for i, det in enumerate(preds):
             if len(det):
@@ -229,7 +228,7 @@ class Engine():
                 preds = model(img, augment=False)[0]
                 
                 # Apply NMS
-                preds = non_max_suppression(preds, opt.conf_thres, opt.iou_thres)
+                preds = non_max_suppression(preds, opt.conf_thres, opt.iou_thres, classes=opt.classes)
                 
                 if len(preds) == 0:
                     print("No pet(s) detected!")
