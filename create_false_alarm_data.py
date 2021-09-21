@@ -3,7 +3,7 @@ import time
 import os
 from datetime import datetime
 import numpy as np
-from tqdm import tqdm
+from tqdm.notebook import tqdm
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
@@ -218,9 +218,13 @@ class Engine():
             #submodel = submodel.half()
         
         extensions = ['jpg', 'JPG', 'png', 'PNG']
+        FLAG_SAVE = False
+        video_name = opt.source_url.strip().split('/')[-1].replace('\n', '')
         for _, image_file in tqdm(enumerate(os.listdir(opt.source_url)), total=len(os.listdir(opt.source_url))):
             ext = image_file[-3:]
             if ext in extensions:
+                txt_file = image_file[:-3] + 'txt'
+                
                 frame = cv2.imread(os.path.join(opt.source_url, image_file))
                 frame = cv2.resize(frame, (1920, 1080))
                 img = letterbox(frame, opt.img_size, stride=self.stride)[0]
@@ -239,23 +243,31 @@ class Engine():
                 # Apply NMS
                 preds = non_max_suppression(preds, opt.conf_thres, opt.iou_thres, classes=opt.classes)
                 
-                if len(preds) == 0:
-                    print("No pet(s) detected!")
-                else:    
-                    print("Pet(s) detection!")
+                if len(preds) > 0:    
+                    #print("Pet(s) detection!")
+                    if not os.path.exists(os.path.join(self.folder_dir, video_name)):
+                        os.makedirs(os.path.join(self.folder_dir, video_name, 'images'))
+                        os.makedirs(os.path.join(self.folder_dir, video_name, 'labels'))
+                        
                     for i, det in enumerate(preds):
                         if len(det):
                             # Rescale boxes from img to original size
                             det[:, :4] = scale_coords(img.shape[2:], det[:, :4], frame.shape).round()
                             
                             for *xyxy, conf, cls in reversed(det):
+                                bbox = [int(xyxy[0]), int(xyxy[1]), int(xyxy[2]), int(xyxy[3])]
                                 label = f'{self.names[int(cls)]} {conf*100:.1f}%'
                                 bbox_width = int(xyxy[2]) - int(xyxy[0])
                                 bbox_height = int(xyxy[3]) - int(xyxy[1])
-                                if bbox_height < 160 and bbox_width < 160:
-                                    #if self.reaffirm_pets(submodel, frame[int(xyxy[1]): int(xyxy[3]), int(xyxy[0]):int(xyxy[2])], opt):
-                                    plot_one_box(xyxy, frame, label=label, color=self.colors[0], line_thickness=2)
-                                    cv2.imwrite(os.path.join(self.frames_dir, f'{image_file}'), frame)
+                                FLAG_SAVE = True
+                                box = voc_to_yolo(int(cls), bbox, frame)
+                                with open(os.path.join(self.folder_dir, video_name, 'labels', f'ad_{txt_file}'), 'a') as f:
+                                    f.write(f'{box[0]} {box[1]} {box[2]} {box[3]} {box[4]}\n')
+                    
+                    if FLAG_SAVE:
+                        FLAG_SAVE = False
+                        cv2.imwrite(os.path.join(self.folder_dir, video_name, 'images', f'ad_{image_file}'), frame)
+                                
     
     
 if __name__ == '__main__':
