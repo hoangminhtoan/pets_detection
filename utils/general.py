@@ -574,3 +574,14 @@ def increment_path(path, exist_ok=True, sep=''):
         i = [int(m.groups()[0]) for m in matches if m]  # indices
         n = max(i) + 1 if i else 2  # increment number
         return f"{path}{sep}{n}"  # update path
+
+def voc_to_yolo(cls_id, bndbox, image):
+    img_height, img_width, _ = image.shape
+    dw = 1./(img_width)
+    dh = 1./(img_height)
+    cx = ((bndbox[0] + bndbox[2])/2.0 - 1)*dw
+    cy = ((bndbox[1] + bndbox[3])/2.0 - 1)*dh
+    cw = (bndbox[2] - bndbox[0])*dw
+    ch = (bndbox[3] - bndbox[1])*dh
+    
+    return [cls_id, cx,cy,cw,ch]
