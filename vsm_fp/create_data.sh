@@ -2,6 +2,8 @@
 declare -a FP_ArrayImgs=(
 "/media/toanhoang/Data/Workspace/pets/catsdogs/train/dogs"
 "/media/toanhoang/Data/Workspace/pets/catsdogs/train/cats"
+"/media/toanhoang/Data/Workspace/pets/catsdogs/val/dogs"
+"/media/toanhoang/Data/Workspace/pets/catsdogs/val/cats"
 )
 
 declare -a FP_ArrayVideos=(
@@ -14,6 +16,7 @@ for output_video in ${FP_ArrayImgs[@]}; do
     echo "Testing image ${counter} / ${#FP_ArrayImgs[@]}"
     CUDA_VISIBLE_DEVICES=0 python ../create_false_alarm_data.py \
     --img 608 --conf 0.5 --iou 0.45 --half\
+    --class 0 1 \
     --weights ../weights/20210920_5s/best.pt \
     --input image --source $output_video
 done

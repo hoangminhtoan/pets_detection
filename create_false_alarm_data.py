@@ -3,7 +3,7 @@ import time
 import os
 from datetime import datetime
 import numpy as np
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
