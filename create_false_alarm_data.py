@@ -11,7 +11,7 @@ from collections import defaultdict
 
 from models.experimental import attempt_load
 from utils.general import non_max_suppression, scale_coords, voc_to_yolo
-from utils.datasets import letterbox, letterbox2
+from utils.datasets import letterbox
 from utils.plots import plot_one_box
 from utils.configs import config
 
@@ -222,11 +222,11 @@ class Engine():
         video_name = opt.source_url.strip().split('/')[-1].replace('\n', '')
         for _, image_file in tqdm(enumerate(os.listdir(opt.source_url)), total=len(os.listdir(opt.source_url))):
             ext = image_file[-3:]
-            if ext in extensions:
+            if ext in extensions and '._' not in image_file:
                 txt_file = image_file[:-3] + 'txt'
                 
                 frame = cv2.imread(os.path.join(opt.source_url, image_file))
-                frame = cv2.resize(frame, (1920, 1080))
+                #frame = cv2.resize(frame, (1920, 1080))
                 img = letterbox(frame, opt.img_size, stride=self.stride)[0]
                 # Convert
                 img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB
