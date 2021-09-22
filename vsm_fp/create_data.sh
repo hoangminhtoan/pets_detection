@@ -1,7 +1,7 @@
 #2109
 declare -a FP_ArrayImgs=(
-"/content/drive/MyDrive/Personal_Docs/ToanHM/VINBRAINS/Projects/SmartCity/Pets/Datasets/catsdogs/train/dogs"
-"/content/drive/MyDrive/Personal_Docs/ToanHM/VINBRAINS/Projects/SmartCity/Pets/Datasets/catsdogs/train/cats"
+"/media/toanhoang/Data/Workspace/pets/catsdogs/train/dogs"
+"/media/toanhoang/Data/Workspace/pets/catsdogs/train/cats"
 )
 
 declare -a FP_ArrayVideos=(
