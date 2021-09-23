@@ -48,7 +48,7 @@ class Engine():
         # Get names and colors
         self.names = model.module.names if hasattr(model, 'module') else model.names
         #self.colors = [[np.random.randint(0, 255) for _ in range(3)] for _ in self.names]
-        self.colors = [[255, 153, 51], [255, 0, 255], [0, 102, 204]] #cat, dog
+        self.colors = [[255, 153, 51], [255, 0, 255], [0, 102, 204], [204, 102, 204]] #cat, dog
         
         if self.device.type != 'cpu':
             if img_size is None:
@@ -58,7 +58,7 @@ class Engine():
             
         return model
     
-    def load_classifier(self, name='resnet34', num_classes=2):
+    def load_classifier(self, name='resnet18', num_classes=2):
         model = torchvision.models.__dict__[name](pretrained=True)
         print("Loading Classifier ....")
         # Reshape output to n classes
@@ -67,7 +67,7 @@ class Engine():
         model.fc.weight = nn.Parameter(torch.zeros(num_classes, filters), requires_grad=True)
         model.fc.out_features = num_classes
         
-        modelc = model.load_state_dict(torch.load(os.path.join('/content/drive/MyDrive/VINBRAINS/Projects/SmartCity/Pets/Source_Code/pets_detection/weights', f'{name}_cat_dog.pt'), map_location=self.device))
+        modelc = model.load_state_dict(torch.load(os.path.join('weights', f'{name}_224_cat_dog.pt'), map_location=self.device))
         modelc = model.to(self.device).eval()
         
         return model
@@ -134,8 +134,7 @@ class Engine():
                 preds = model(img, augment=False)[0]
                 
                 # Apply NMS
-                preds = non_max_suppression(preds, opt.conf_thres,  opt.iou_thres, classes=opt.classes)
-                
+                preds = non_max_suppression(preds, opt.conf_thres,  opt.iou_thres)
                 # Process classifier
                 preds = apply_classifier(preds, classifier, img, frame)
                 
