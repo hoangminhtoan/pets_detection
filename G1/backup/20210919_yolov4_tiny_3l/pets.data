@@ -1,0 +1,6 @@
+classes= 2
+train  = /media/toanhoang/Data/Workspace/Source_Code/pets_detection_darknet/backup/train.txt
+valid  = /media/toanhoang/Data/Workspace/Source_Code/pets_detection_darknet/backup/val.txt
+names = /media/toanhoang/Data/Workspace/Source_Code/pets_detection_darknet/backup/20210919_yolov4_tiny_3l/pets.names
+backup = /media/toanhoang/Data/Workspace/Source_Code/pets_detection_darknet/backup/20210919_yolov4_tiny_3l
+
