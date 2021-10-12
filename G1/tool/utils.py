@@ -1,12 +1,8 @@
-import sys
 import os
-import time
+import cv2 
+import random
 import math
 import numpy as np
-
-import itertools
-import struct  # get_image_size
-import imghdr  # get_image_size
 
 
 def sigmoid(x):
@@ -95,6 +91,22 @@ def nms_cpu(boxes, confs, nms_thresh=0.5, min_mode=False):
     return np.array(keep)
 
 
+def plot_one_box(x, img, label=None, color=None, line_thickness=3):
+    # Plots one bounding box on image img
+    tl = line_thickness or round(0.002 * (img.shape[0] + img.shape[1]) / 2) + 1  # line/font thickness
+    color = color or [random.randint(0, 255) for _ in range(3)]
+    c1, c2 = (int(x[0]), int(x[1])), (int(x[2]), int(x[3]))
+    cx = c1[0] + (c2[0] - c1[0]) // 2
+    cy = c1[1] + (c2[1] - c1[0]) // 2
+    cv2.rectangle(img, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
+    if label:
+        #print(f'{label} size (wxh): {int(x[2]) - int(x[0])}x{int(x[3]) - int(x[1])}')
+        #label += f',{int(x[2]) - int(x[0])}x{int(x[3]) - int(x[1])}'
+        tf = max(tl - 1, 1)  # font thickness
+        t_size = cv2.getTextSize(label, 0, fontScale=tl / 3, thickness=tf)[0]
+        c2 = c1[0] + t_size[0], c1[1] - t_size[1] - 3
+        cv2.rectangle(img, c1, c2, color, -1, cv2.LINE_AA)  # filled
+        cv2.putText(img, label, (c1[0], c1[1] - 2), 0, tl / 3, [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA)
 
 def plot_boxes_cv2(img, boxes, savename=None, class_names=None, color=None):
     import cv2
@@ -164,19 +176,11 @@ def load_class_names(namesfile):
 
 
 def post_processing(img, conf_thresh, nms_thresh, output):
-
-    # anchors = [12, 16, 19, 36, 40, 28, 36, 75, 76, 55, 72, 146, 142, 110, 192, 243, 459, 401]
-    # num_anchors = 9
-    # anchor_masks = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
-    # strides = [8, 16, 32]
-    # anchor_step = len(anchors) // num_anchors
-
     # [batch, num, 1, 4]
     box_array = output[0]
     # [batch, num, num_classes]
     confs = output[1]
 
-    t1 = time.time()
 
     if type(box_array).__name__ != 'ndarray':
         box_array = box_array.cpu().detach().numpy()
@@ -191,7 +195,6 @@ def post_processing(img, conf_thresh, nms_thresh, output):
     max_conf = np.max(confs, axis=2)
     max_id = np.argmax(confs, axis=2)
 
-    t2 = time.time()
 
     bboxes_batch = []
     for i in range(box_array.shape[0]):
@@ -221,13 +224,5 @@ def post_processing(img, conf_thresh, nms_thresh, output):
                     bboxes.append([ll_box_array[k, 0], ll_box_array[k, 1], ll_box_array[k, 2], ll_box_array[k, 3], ll_max_conf[k], ll_max_conf[k], ll_max_id[k]])
         
         bboxes_batch.append(bboxes)
-
-    t3 = time.time()
-
-    print('-----------------------------------')
-    print('       max and argmax : %f' % (t2 - t1))
-    print('                  nms : %f' % (t3 - t2))
-    print('Post processing total : %f' % (t3 - t1))
-    print('-----------------------------------')
     
     return bboxes_batch

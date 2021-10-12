@@ -254,7 +254,7 @@ class Engine():
             for label, conf, bbox in dets:
                 bbox_adjusted = self.convert_to_original(frame, darknet_height, darknet_width, bbox)
                 _, _, box_width, box_height = bbox_adjusted
-                if label in ['cat', 'dog'] and (box_width > 48 and box_width < 128) or (box_height > 48 and box_height < 128):
+                if label in ['cat', 'dog'] and box_width > 48 and box_height > 48:
                     detections_adjusted.append((str(label), conf, bbox_adjusted))
                     frame = darknet.draw_boxes(detections_adjusted, frame, self.colors)
                     cv2.imwrite(os.path.join(self.videos_dir, f'{image_name}'), frame)
