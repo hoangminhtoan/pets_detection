@@ -21,7 +21,7 @@
 ```
 check out example in backup/20210901_yolov4_tiny/
 ```
-3. Modify ```train_pets.sh``` then run ```bash train_pets.sh```
+3. Modify  ```train_pets.sh``` then run ```bash train_pets.sh```
 
 ### Testing
 1. Modify the config file for testing
