@@ -11,7 +11,7 @@ import torch.backends.cudnn as cudnn
 import collections
 from sklearn.metrics import f1_score, precision_score, recall_score, confusion_matrix, fbeta_score
 
-from configs import config
+from tool.config import config
 from tool.utils import *
 from tool.torch_utils import *
 from tool.darknet2pytorch import Darknet
@@ -67,8 +67,8 @@ class Engine():
             self.frame_step = round(fps / self.fps_target)
         print(f'input video {opt.source_url} with frame rate: {fps} => skips {self.frame_step} frame(s)')
             
-        video_width = 1920 # int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        video_height = 1080 # int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        video_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)) #1920
+        video_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) #1080
             
         # Set output video
         video_name = opt.source_url.strip().split('/')[-1].replace('\n', '')
@@ -194,10 +194,6 @@ class Engine():
         image_paths =  list(glob.glob(os.path.join(opt.source_url, "*.jpg")))
         image_paths.sort()
 
-        # set image size
-        img_width = 1920
-        img_height = 1080
-
         for idx, image_path in enumerate(image_paths):
             print(f'Image {idx+1}/{len(image_paths)}\n')
             if not os.path.isfile(image_path):
@@ -206,6 +202,9 @@ class Engine():
             image_name = image_path.strip().split('/')[-1]
 
             frame = cv2.imread(os.path.join(image_path))
+            # set image size
+            img_width = frame.shape[1] # 1920
+            img_height = frame.shape[0] #1080
             frame = cv2.resize(frame, (img_width, img_height))
             img = cv2.resize(frame, (model.width, model.height), interpolation=cv2.INTER_LINEAR)
             # Convert
