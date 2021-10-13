@@ -11,8 +11,8 @@ import torchvision
 import torch.nn as nn
 import collections
 
-from configs import config
-from utils import xywh2xyxy, xyxy2xywh, scale_coords
+from tool.config import config
+from tool.utils import xywh2xyxy, xyxy2xywh, scale_coords
 
 dt_string = datetime.now().strftime("%Y%m%d")
 
