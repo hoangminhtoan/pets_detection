@@ -32,12 +32,11 @@ class Engine():
         # Create folder to save result videos
         parent_folder = opt.source_url.strip().split('/')[-3].replace('\n', '') 
         folder_name = opt.source_url.strip().split('/')[-2].replace('\n', '')            
-        if not os.path.exists(os.path.join(config.RESULT_DIR, f'{dt_string}_videos', f'{parent_folder}', f'{folder_name}', 'frames')):
-            os.makedirs(os.path.join(config.RESULT_DIR, f'{dt_string}_videos', f'{parent_folder}', f'{folder_name}', 'frames'))
+        if not os.path.exists(os.path.join(config.RESULT_DIR, f'{dt_string}_videos', f'{parent_folder}', f'{folder_name}')):
+            os.makedirs(os.path.join(config.RESULT_DIR, f'{dt_string}_videos', f'{parent_folder}', f'{folder_name}'))
         
         
         self.videos_dir = os.path.join(config.RESULT_DIR, f'{dt_string}_videos', f'{parent_folder}', f'{folder_name}')
-        self.frames_dir = os.path.join(config.RESULT_DIR, f'{dt_string}_videos', f'{parent_folder}',  f'{folder_name}', 'frames')
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     
     def load_detector_model(self, opt):
@@ -82,7 +81,7 @@ class Engine():
         g1_model, g2_model = self.load_detector_model(opt)
 
         # load classifier model
-        modelc = self.load_classifier()
+        #modelc = self.load_classifier()
 
         #load video
         cap = cv2.VideoCapture(opt.source_url)
@@ -101,8 +100,8 @@ class Engine():
             
         # Set output video
         video_name = opt.source_url.strip().split('/')[-1].replace('\n', '')
-        if not os.path.exists(os.path.join(self.frames_dir, video_name)):
-            os.makedirs(os.path.join(self.frames_dir, video_name)) 
+        #if not os.path.exists(os.path.join(self.frames_dir, video_name)):
+        #    os.makedirs(os.path.join(self.frames_dir, video_name)) 
         #out = cv2.VideoWriter(os.path.join(self.frames_dir, video_name, f'{video_name}.mp4'), cv2.VideoWriter_fourcc(*'mp4v'), 5, (video_width, video_height))
         
         frame_idx = -1
@@ -146,7 +145,7 @@ class Engine():
                     box_width, box_height = bbox[2] - bbox[0], bbox[3] - bbox[1]
                     label = self.names[int(cls_id)]
                     #if label in ['cat', 'dog', 'human']: # and ((box_height > 48 and box_height < 128) or (box_width > 48 and box_width)):
-                    if label in ['cat', 'dog'] and box_height > 48 and box_width > 48:
+                    if label in ['cat', 'dog']:
                         max_conf = max(max_conf, float(conf))
                         #if (bbox[0] > 10 and bbox[0] < video_width - 10) and (bbox[1] > 10 and bbox[1] < video_height - 10):
                             #label = f'{self.names[int(cls_id)]} {conf*100:.1f}'
@@ -164,18 +163,18 @@ class Engine():
 
             if self.duration == self.fps_target * 2: # duration là  20 frames 
                 if len(images_list) > 2:
-                    #if not os.path.exists(os.path.join(self.frames_dir, video_name)):
-                    #    os.makedirs(os.path.join(self.frames_dir, video_name)) 
+                    now = datetime.now().strftime("%Y%m%d")
+                    print("[Warning!] at time {} Pet(s) were detected!".format(now))
+                    if not os.path.exists(os.path.join(self.videos_dir, video_name)):
+                        os.makedirs(os.path.join(self.videos_dir, video_name)) 
                     sorted_tm_idx = dict(sorted(tmp_idx_conf.items(), key=lambda item: item[1], reverse=True))
 
                     if max_conf > 0:
-                        now = datetime.now().strftime("%Y%m%d")
-                        print("[Warning!] at time {} Pet(s) were detected!".format(now))
                         prefix = '{:07}.jpg'
                         d = list(sorted_tm_idx.keys())[0] # get frame index that has the largest confidence score
                         cv2.putText(images_list[d], "key frame", (150, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
                         #cv2.imwrite(os.path.join(self.frames_dir, video_name, f'{offset}_{now}_{video_name}_{prefix.format(d)}'), images_list[d])
-                        self.detect_frame(g2_model, opt, frame, frame_name=f'{offset}_{now}_{video_name}_{prefix.format(d)}') # call cloud model
+                        self.detect_frame(g2_model, opt, images_list[d], video_name=video_name, img_name=f'{offset}_{now}_{video_name}_{prefix.format(d)}') # call cloud model
 
                 # Reset variable
                 self.duration = 0
@@ -195,15 +194,14 @@ class Engine():
         cap.release()
             # cv2.destroyAllWindows()
 
-    def detect_frame(self, model, opt, frame, img_name):
+    def detect_frame(self, model, opt, frame, video_name, img_name=None):
         # set image size
         img = letterbox(frame, opt.img_size, stride=self.stride)[0]
         # Convert
         img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB
         img = np.ascontiguousarray(img)
         img = torch.from_numpy(img).to(self.device)
-        img = img.half() if opt.half else img.float() 
-        img /= 255.0
+        img = img.float() / 255.0
         if img.ndimension() == 3:
             img = img.unsqueeze(0)
                 
@@ -211,7 +209,7 @@ class Engine():
         preds = model(img, augment=False)[0]
                 
         # Apply NMS
-        preds = non_max_suppression(preds, opt.conf_thres, opt.iou_thres, classes=opt.classes)
+        preds = non_max_suppression(preds, opt.conf_thres, opt.iou_thres)
                 
         for i, det in enumerate(preds):
             if len(det):
@@ -222,9 +220,9 @@ class Engine():
                     label = f'{self.names[int(cls)]} {conf*100:.1f}%'
                     bbox_width = int(xyxy[2]) - int(xyxy[0])
                     bbox_height = int(xyxy[3]) - int(xyxy[1])
-                    if bbox_height > 48 or bbox_width > 48:
-                        plot_one_box(xyxy, frame, label=label, color=self.colors[0], line_thickness=2)
-                        cv2.imwrite(os.path.join(self.frames_dir, f'{img_name}'), frame)
+                    if int(cls) < 2 and bbox_height > 48 or bbox_width > 48:
+                        plot_one_box(xyxy, frame, label=label, color=self.colors[int(cls)], line_thickness=2)
+                        cv2.imwrite(os.path.join(self.videos_dir, video_name, f'{img_name}'), frame)
 
 
 if __name__ == '__main__':
@@ -238,7 +236,7 @@ if __name__ == '__main__':
     parser.add_argument("--names_file", default="./cfg/x.names", help="path to class names file")
     parser.add_argument('--conf_thres', type=float, default=0.6, help='object confidence threshold')
     parser.add_argument('--iou_thres', type=float, default=0.45, help='IOU threshold for NMS')
-    parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
+    #parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     opt = parser.parse_args()
     
     print(opt)
