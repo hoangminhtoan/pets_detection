@@ -142,7 +142,7 @@ class Engine():
                         for b in box_height[i]:
                             with open(os.path.join(self.label_dir, f'{offset}_{now}_{video_name}_{prefix.format(i)}.txt'), 'a') as f:
                                 f.write(' '.join(t for t in b) + '\n')
-                                
+
                 # Reset variable
                 self.duration = 0
                 images_list = []
@@ -209,14 +209,11 @@ class Engine():
                     frame = utils.plot_one_box(xyxy, frame, label=label, color=self.colors[0], line_thickness=2)
                     cv2.imwrite(os.path.join(self.videos_dir, f'{image_name}'), frame)
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="YOLO Object Detection")
     parser.add_argument("--source_url", type=str, default="", help="video source. If empty, uses webcam 0 stream")
     parser.add_argument("--input_type", type=str, default='video', help='type of the input source')
-    parser.add_argument("--out_filename", type=str, default="", help="inference video name. Not saved if empty")
     parser.add_argument("--weight_file", default="yolov4.weights", help="yolo weights path")
-    parser.add_argument("--ext_output", action='store_true', help="display bbox coordinates of detected objects")
     parser.add_argument("--config_file", default="./cfg/yolov4.cfg", help="path to config file")
     parser.add_argument("--data_file", default="./cfg/coco.data", help="path to data file")
     parser.add_argumnet("--names_file", default="./cfg/x.names", hept="path to class names file")
