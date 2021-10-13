@@ -1,6 +1,6 @@
 classes = 3
 train  = /media/tuan-ng/39d94ede-b88e-49af-961d-6c1b096a14ea/home/vinbrain/Workspace/Source_Code/pets_detection_darknet/backup/train_pets_human.txt
-valid  = /media/tuan-ng/39d94ede-b88e-49af-961d-6c1b096a14ea/home/vinbrain/Workspace/Source_Code/pets_detection_darknet/backup/val_pets_human.txt
+valid  = /media/tuan-ng/39d94ede-b88e-49af-961d-6c1b096a14ea/home/vinbrain/Workspace/Source_Code/pets_detection_darknet/backup/test_pets_human.txt
 names = /media/tuan-ng/39d94ede-b88e-49af-961d-6c1b096a14ea/home/vinbrain/Workspace/Source_Code/pets_detection_darknet/backup/20211006_yolov4_tiny_3l/pets.names
 backup = /media/tuan-ng/39d94ede-b88e-49af-961d-6c1b096a14ea/home/vinbrain/Workspace/Source_Code/pets_detection_darknet/backup/20211006_yolov4_tiny_3l
 
