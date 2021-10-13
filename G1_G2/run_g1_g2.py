@@ -103,7 +103,7 @@ class Engine():
         video_name = opt.source_url.strip().split('/')[-1].replace('\n', '')
         if not os.path.exists(os.path.join(self.frames_dir, video_name)):
             os.makedirs(os.path.join(self.frames_dir, video_name)) 
-        out = cv2.VideoWriter(os.path.join(self.frames_dir, video_name, f'{video_name}.mp4'), cv2.VideoWriter_fourcc(*'mp4v'), 5, (video_width, video_height))
+        #out = cv2.VideoWriter(os.path.join(self.frames_dir, video_name, f'{video_name}.mp4'), cv2.VideoWriter_fourcc(*'mp4v'), 5, (video_width, video_height))
         
         frame_idx = -1
         offset = 0
@@ -144,13 +144,13 @@ class Engine():
                 for *xyxy, conf, cls_id in preds:
                     bbox = [int(xyxy[0]), int(xyxy[1]), int(xyxy[2]), int(xyxy[3])]
                     box_width, box_height = bbox[2] - bbox[0], bbox[3] - bbox[1]
-                    label = self.name[int(cls_id)]
+                    label = self.names[int(cls_id)]
                     #if label in ['cat', 'dog', 'human']: # and ((box_height > 48 and box_height < 128) or (box_width > 48 and box_width)):
                     if label in ['cat', 'dog'] and box_height > 48 and box_width > 48:
                         max_conf = max(max_conf, float(conf))
-                        if (bbox[0] > 10 and bbox[0] < video_width - 10) and (bbox[1] > 10 and bbox[1] < video_height - 10):
+                        #if (bbox[0] > 10 and bbox[0] < video_width - 10) and (bbox[1] > 10 and bbox[1] < video_height - 10):
                             #label = f'{self.names[int(cls_id)]} {conf*100:.1f}'
-                            FLAG_SAVE = True
+                        FLAG_SAVE = True
                             #frame = utils.plot_one_box(xyxy, frame, label=label, color=self.colors[0], line_thickness=2) #output of g1_model
 
                 if FLAG_SAVE:
@@ -163,19 +163,19 @@ class Engine():
                     idx += 1
 
             if self.duration == self.fps_target * 2: # duration là  20 frames 
-                if (next_offset == offset + 10) and len(images_list) > 2:
-                    now = datetime.now().strftime("%Y%m%d")
-                    print("[Warning!] at time {} Pet(s) were detected!".format(now))
+                if len(images_list) > 2:
                     #if not os.path.exists(os.path.join(self.frames_dir, video_name)):
                     #    os.makedirs(os.path.join(self.frames_dir, video_name)) 
                     sorted_tm_idx = dict(sorted(tmp_idx_conf.items(), key=lambda item: item[1], reverse=True))
 
                     if max_conf > 0:
+                        now = datetime.now().strftime("%Y%m%d")
+                        print("[Warning!] at time {} Pet(s) were detected!".format(now))
                         prefix = '{:07}.jpg'
                         d = list(sorted_tm_idx.keys())[0] # get frame index that has the largest confidence score
                         cv2.putText(images_list[d], "key frame", (150, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
                         #cv2.imwrite(os.path.join(self.frames_dir, video_name, f'{offset}_{now}_{video_name}_{prefix.format(d)}'), images_list[d])
-                        frame = self.detect_frame(g2_model, opt, frame, frame_name=f'{offset}_{now}_{video_name}_{prefix.format(d)}') # call cloud model
+                        self.detect_frame(g2_model, opt, frame, frame_name=f'{offset}_{now}_{video_name}_{prefix.format(d)}') # call cloud model
 
                 # Reset variable
                 self.duration = 0
@@ -185,7 +185,7 @@ class Engine():
                 idx = 0
                 
             # Write Video
-            out.write(frame)
+            #out.write(frame)
                 
                 # Show prediction
                 # cv2.imshow(WINDOW_NAME, frame)

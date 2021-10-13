@@ -7,7 +7,7 @@ from tool.torch_utils import convert2cpu
 config = types.SimpleNamespace()
 
 # config
-HOME_DIR = str(Path(__file__).parent)
+HOME_DIR = str(Path(__file__).parent.parent)
 
 # get home directory
 config.HOME_DIR = HOME_DIR
