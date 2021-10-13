@@ -1,0 +1,5 @@
+classes= 3
+train  = /media/tuan-ng/39d94ede-b88e-49af-961d-6c1b096a14ea/home/vinbrain/Workspace/Source_Code/pets_detection/G1/backup/train_pets_human.txt
+valid  = /media/tuan-ng/39d94ede-b88e-49af-961d-6c1b096a14ea/home/vinbrain/Workspace/Source_Code/pets_detection/G1/backup/val_pets_human.txt
+names = /media/tuan-ng/39d94ede-b88e-49af-961d-6c1b096a14ea/home/vinbrain/Workspace/Source_Code/pets_detection/G1/backup/20211013_yolov4_3_classes/pets.names
+backup = /media/tuan-ng/39d94ede-b88e-49af-961d-6c1b096a14ea/home/vinbrain/Workspace/Source_Code/pets_detection/G1/backup/20211013_yolov4_3_classes
