@@ -128,13 +128,10 @@ class Engine():
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
                 # Convert
-                img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB
-                img = np.ascontiguousarray(img)
-                img = torch.from_numpy(img).to(self.device)
+                if type(img) == np.ndarray and len(img.shape) == 3:  # cv2 image
+                    img = torch.from_numpy(img.transpose(2, 0, 1)).float().div(255.0).unsqueeze(0)
                 img = img.to(self.device)
-                img /= 255.0
-                if img.ndimension() == 3:
-                    img = img.unsqueeze(0)
+                img = torch.autograd.Variable(img)
             
                 # detect object
                 preds = g1_model(img)
@@ -233,13 +230,12 @@ class Engine():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="YOLO Object Detection")
     parser.add_argument("--source_url", type=str, default="", help="video source. If empty, uses webcam 0 stream")
-    parser.add_argument("--input_type", type=str, default='video', help='type of the input source')
     parser.add_argument('--img-size', type=int, default=608, help='inference size (pixels)')
     parser.add_argument("--weight_g1", default="dcm.weight", help="g1 weights path")
     parser.add_argument("--weight_cloud", default="dcm.pt", help="cloud weights path")
     parser.add_argument("--config_file", default="./cfg/yolov4.cfg", help="path to config file")
     parser.add_argument("--data_file", default="./cfg/coco.data", help="path to data file")
-    parser.add_argumnet("--names_file", default="./cfg/x.names", hept="path to class names file")
+    parser.add_argument("--names_file", default="./cfg/x.names", help="path to class names file")
     parser.add_argument('--conf_thres', type=float, default=0.6, help='object confidence threshold')
     parser.add_argument('--iou_thres', type=float, default=0.45, help='IOU threshold for NMS')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
@@ -248,9 +244,4 @@ if __name__ == '__main__':
     print(opt)
     with torch.no_grad():
         engine = Engine(opt)
-        if opt.input_type == 'video':
-            engine.detect(opt)
-        elif opt.input_type == 'image':
-            engine.detect_frame(opt) 
-        else:
-            print('[Error] You must set input type as video or image')
+        engine.detect(opt)
