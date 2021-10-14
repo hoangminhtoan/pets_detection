@@ -141,11 +141,11 @@ class Engine():
                 bnd_boxes = []
                 max_conf = -100.0
                 for *xyxy, conf, cls_id in preds:
-                    bbox = [int(xyxy[0]), int(xyxy[1]), int(xyxy[2]), int(xyxy[3])]
+                    bbox = [int(xyxy[0] * video_width), int(xyxy[1] * video_height), int(xyxy[2] * video_width), int(xyxy[3] * video_height)]
                     box_width, box_height = bbox[2] - bbox[0], bbox[3] - bbox[1]
                     label = self.names[int(cls_id)]
                     #if label in ['cat', 'dog', 'human']: # and ((box_height > 48 and box_height < 128) or (box_width > 48 and box_width)):
-                    if label in ['cat', 'dog']:
+                    if label in ['cat', 'dog'] and box_width > 48 or box_height > 48:
                         max_conf = max(max_conf, float(conf))
                         #if (bbox[0] > 10 and bbox[0] < video_width - 10) and (bbox[1] > 10 and bbox[1] < video_height - 10):
                             #label = f'{self.names[int(cls_id)]} {conf*100:.1f}'
