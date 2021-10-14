@@ -39,6 +39,7 @@ class Engine():
         self.videos_dir = os.path.join(config.RESULT_DIR, f'{dt_string}_videos', f'{parent_folder}', f'{folder_name}')
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.g1_model, self.g2_model = self.load_detector_model(opt)
+        self.classifer = self.load_classifier(opt)
     
     def load_detector_model(self, opt):
         # Load darknet model
@@ -79,8 +80,6 @@ class Engine():
 
     def detect(self, opt):
         #load detector model
-        g1_model, g2_model = self.g1_model, self.g2_model
-
         # load classifier model
         #modelc = self.load_classifier()
 
@@ -109,7 +108,7 @@ class Engine():
         offset = 0
         next_offset = 0
         images_list = []
-        tmp_idx_conf = {}
+        tmp_idx_conf = []
         previous_box_list = []
         idx = 0
         FLAG_SAVE = False
@@ -124,7 +123,7 @@ class Engine():
             if frame_idx % self.frame_step == 0:
                 self.duration += 1
                 frame = cv2.resize(frame, (video_width, video_height))
-                img = cv2.resize(frame, (g1_model.width, g1_model.height), interpolation=cv2.INTER_LINEAR) # resize input frame into input g1 network size
+                img = cv2.resize(frame, (self.g1_model.width, self.g1_model.height), interpolation=cv2.INTER_LINEAR) # resize input frame into input g1 network size
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
                 # Convert
@@ -134,7 +133,7 @@ class Engine():
                 img = torch.autograd.Variable(img)
             
                 # detect object
-                preds = g1_model(img)
+                preds = self.g1_model(img)
 
                 # Apply NMS
                 preds = utils.post_processing(img, opt.conf_thres, opt.iou_thres, preds)[0] # [x0, y0, x1, y1, cls_conf, cls_id]
@@ -144,9 +143,8 @@ class Engine():
                 for *xyxy, conf, cls_id in preds:
                     bbox = [int(xyxy[0] * video_width), int(xyxy[1] * video_height), int(xyxy[2] * video_width), int(xyxy[3] * video_height)]
                     box_width, box_height = bbox[2] - bbox[0], bbox[3] - bbox[1]
-                    label = self.names[int(cls_id)]
                     #if label in ['cat', 'dog', 'human']: # and ((box_height > 48 and box_height < 128) or (box_width > 48 and box_width)):
-                    if label in ['cat', 'dog'] and box_width > 48 or box_height > 48:
+                    if int(cls_id) < 2 and box_width > 48 or box_height > 48:
                         max_conf = max(max_conf, float(conf))
                         #if (bbox[0] > 10 and bbox[0] < video_width - 10) and (bbox[1] > 10 and bbox[1] < video_height - 10):
                             #label = f'{self.names[int(cls_id)]} {conf*100:.1f}'
@@ -156,26 +154,23 @@ class Engine():
                 if FLAG_SAVE:
                     FLAG_SAVE = False
                     images_list.append(frame)
+                    tmp_idx_conf.append(max_conf)
                     if next_offset == 0 or next_offset == offset: # ignore 10 offsets after current detected offset
                         next_offset = offset + 10
 
-                    tmp_idx_conf[idx] = max_conf
-                    idx += 1
-
-            if self.duration == self.fps_target * 2: # duration là  20 frames 
+            if self.duration == self.fps_target * 2: # duration is  20 frames 
                 if len(images_list) > 2:
                     now = datetime.now().strftime("%Y%m%d")
                     print("[Warning!] at time {} Pet(s) were detected!".format(now))
                     if not os.path.exists(os.path.join(self.videos_dir, video_name)):
                         os.makedirs(os.path.join(self.videos_dir, video_name)) 
-                    sorted_tm_idx = dict(sorted(tmp_idx_conf.items(), key=lambda item: item[1], reverse=True))
 
                     if max_conf > 0:
                         prefix = '{:07}.jpg'
-                        d = list(sorted_tm_idx.keys())[0] # get frame index that has the largest confidence score
+                        d = np.argmax(tmp_idx_conf) # get frame index that has the largest confidence score
                         cv2.putText(images_list[d], "key frame", (150, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
                         #cv2.imwrite(os.path.join(self.frames_dir, video_name, f'{offset}_{now}_{video_name}_{prefix.format(d)}'), images_list[d])
-                        self.detect_frame(g2_model, opt, images_list[d], video_name=video_name, img_name=f'{offset}_{now}_{video_name}_{prefix.format(d)}') # call cloud model
+                        self.detect_frame(self.g2_model, opt, images_list[d], video_name=video_name, img_name=f'{offset}_{now}_{video_name}_{prefix.format(d)}') # call cloud model
 
                 # Reset variable
                 self.duration = 0
@@ -212,7 +207,7 @@ class Engine():
         # Apply NMS
         preds = non_max_suppression(preds, opt.conf_thres, opt.iou_thres)
                 
-        for i, det in enumerate(preds):
+        for _, det in enumerate(preds):
             if len(det):
                 # Rescale boxes from img to original size
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], frame.shape).round()
@@ -230,17 +225,20 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="YOLO Object Detection")
     parser.add_argument("--source_url", type=str, default="", help="video source. If empty, uses webcam 0 stream")
     parser.add_argument('--img-size', type=int, default=608, help='inference size (pixels)')
-    parser.add_argument("--weight_g1", default="dcm.weight", help="g1 weights path")
-    parser.add_argument("--weight_cloud", default="dcm.pt", help="cloud weights path")
-    parser.add_argument("--config_file", default="./cfg/yolov4.cfg", help="path to config file")
-    parser.add_argument("--data_file", default="./cfg/coco.data", help="path to data file")
-    parser.add_argument("--names_file", default="./cfg/x.names", help="path to class names file")
-    parser.add_argument('--conf_thres', type=float, default=0.6, help='object confidence threshold')
-    parser.add_argument('--iou_thres', type=float, default=0.45, help='IOU threshold for NMS')
+    parser.add_argument("--weight_g1", default="weights/20211005_yolov4_tiny/yolov4-tiny-pets_human_best.weights", help="g1 weights path")
+    parser.add_argument("--weight_cloud", default="weights/20211007_yolov5s/best.pt", help="cloud weights path")
+    parser.add_argument("--config_file", default="weights/20211005_yolov4_tiny/yolov4-tiny-pets_human.cfg", help="path to config file")
+    parser.add_argument("--data_file", default="weights/20211005_yolov4_tiny/pets.data", help="path to data file")
+    parser.add_argument("--names_file", default="weights/20211005_yolov4_tiny/pets.names", help="path to class names file")
+    parser.add_argument('--conf_thres', type=float, default=0.5, help='object confidence threshold')
+    parser.add_argument('--iou_thres', type=float, default=0.4, help='IOU threshold for NMS')
     #parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     opt = parser.parse_args()
     
     print(opt)
     with torch.no_grad():
         engine = Engine(opt)
-        engine.detect(opt)
+        with open('fil.csv', 'r') as f:
+            for line in f.readlines():
+                opt.source_url = line.strip().replace('\n', '')
+                engine.detect(opt)
