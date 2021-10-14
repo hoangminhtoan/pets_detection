@@ -38,6 +38,7 @@ class Engine():
         
         self.videos_dir = os.path.join(config.RESULT_DIR, f'{dt_string}_videos', f'{parent_folder}', f'{folder_name}')
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.g1_model, self.g2_model = self.load_detector_model(opt)
     
     def load_detector_model(self, opt):
         # Load darknet model
@@ -78,7 +79,7 @@ class Engine():
 
     def detect(self, opt):
         #load detector model
-        g1_model, g2_model = self.load_detector_model(opt)
+        g1_model, g2_model = self.g1_model, self.g2_model
 
         # load classifier model
         #modelc = self.load_classifier()
